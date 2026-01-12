@@ -1,0 +1,37 @@
+{
+  "version": "0.0.1",
+  "window_geometry_b64": "AdnQywADAAAAAAjVAAAApQAADiQAAANXAAAI1QAAAMQAAA4kAAADVwAAAAEAAAAAB4AAAAjVAAAAxAAADiQAAANX",
+  "selected_target": "Windows MMAP Emulator",
+  "plots": {
+    "top": {
+      "title": "Graph 1",
+      "signals": [
+        {
+          "name": "vehicle.speed_kmh",
+          "color": "#ffffff",
+          "visible": true
+        }
+      ]
+    },
+    "bottom": {
+      "title": "Graph 2",
+      "signals": [
+        {
+          "name": "brake",
+          "color": "#ff0000",
+          "visible": true
+        },
+        {
+          "name": "steer",
+          "color": "#0000ff",
+          "visible": true
+        },
+        {
+          "name": "throttle",
+          "color": "#00aa00",
+          "visible": true
+        }
+      ]
+    }
+  }
+}
