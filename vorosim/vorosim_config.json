@@ -1,37 +1,51 @@
 {
   "version": "0.0.1",
-  "window_geometry_b64": "AdnQywADAAAAAAjVAAAApQAADiQAAANXAAAI1QAAAMQAAA4kAAADVwAAAAEAAAAAB4AAAAjVAAAAxAAADiQAAANX",
-  "selected_target": "Windows MMAP Emulator",
+  "window_geometry_b64": "AdnQywADAAAAAACiAAAAjAAACEsAAASyAAAAogAAAKsAAAhLAAAEsgAAAAAAAAAADXAAAACiAAAAqwAACEsAAASy",
+  "selected_target": "Assetto Corsa Shared Memory",
   "plots": {
     "top": {
       "title": "Graph 1",
       "signals": [
         {
-          "name": "vehicle.speed_kmh",
-          "color": "#ffffff",
+          "name": "physics.accG[0]",
+          "color": "#2b1010",
           "visible": true
+        },
+        {
+          "name": "physics.roll",
+          "color": "#4069ff",
+          "visible": false
+        },
+        {
+          "name": "physics.accG[1]",
+          "color": "#fff713",
+          "visible": true
+        },
+        {
+          "name": "physics.accG[2]",
+          "color": "#0c79ff",
+          "visible": true
+        },
+        {
+          "name": "physics.pitch",
+          "color": "#17ff17",
+          "visible": false
+        },
+        {
+          "name": "physics.steerAngle",
+          "color": "#ff20da",
+          "visible": true
+        },
+        {
+          "name": "physics.heading",
+          "color": "#ff9326",
+          "visible": false
         }
       ]
     },
     "bottom": {
       "title": "Graph 2",
-      "signals": [
-        {
-          "name": "brake",
-          "color": "#ff0000",
-          "visible": true
-        },
-        {
-          "name": "steer",
-          "color": "#0000ff",
-          "visible": true
-        },
-        {
-          "name": "throttle",
-          "color": "#00aa00",
-          "visible": true
-        }
-      ]
+      "signals": []
     }
   }
 }

@@ -1,8 +1,26 @@
 import time
 import threading
+
 from PyQt6.QtCore import QObject, pyqtSignal
 
-from vorosim.utils.win_mmap.provider.core import WinMmapProvider
+from vorosim.utils.win_mmap.assetto import AssettoCorsaSharedMemory
+
+
+def flatten_ac_sample(sample: dict) -> dict:
+    out = {}
+
+    for group_name, group in sample.items():
+        if not isinstance(group, dict):
+            continue
+
+        for key, value in group.items():
+            if isinstance(value, list):
+                for i, v in enumerate(value):
+                    out[f"{group_name}.{key}[{i}]"] = v
+            else:
+                out[f"{group_name}.{key}"] = value
+
+    return out
 
 
 class TelemetryWorker(QObject):
@@ -21,33 +39,36 @@ class TelemetryWorker(QObject):
         self._latest_sample = None
 
     def get_latest(self):
-        """Called from UI thread."""
         with self._lock:
             return self._latest_t, self._latest_sample
 
     def start_stream(self):
         if self._running:
             return
-        self._running = True
 
+        self._running = True
         start = time.perf_counter()
+
         try:
-            self.status.emit("opening shared memory…")
+            self.status.emit("opening shared memory...")
             self._shm = AssettoCorsaSharedMemory()
             self._shm.open()
 
             self.status.emit("streaming")
-            self.log.emit("Streaming started (100 Hz read)")
+            self.log.emit("Streaming started (Assetto Corsa shared memory)")
 
             while self._running:
-                s = self._shm.read()
+                raw = self._shm.read()
+                sample = flatten_ac_sample(raw)
                 t = time.perf_counter() - start
 
                 with self._lock:
                     self._latest_t = t
-                    self._latest_sample = s
+                    self._latest_sample = sample
 
-                time.sleep(self.read_dt)
+                end_time = time.perf_counter() + self.read_dt
+                while self._running and time.perf_counter() < end_time:
+                    time.sleep(0.001)
 
         except Exception as e:
             self.log.emit(f"Worker error: {e}")
@@ -55,7 +76,7 @@ class TelemetryWorker(QObject):
 
         finally:
             try:
-                if self._shm:
+                if self._shm is not None:
                     self._shm.close()
             except Exception:
                 pass
