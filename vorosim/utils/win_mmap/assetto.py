@@ -245,15 +245,15 @@ class AssettoCorsaSharedMemory:
     """
     Windows-only reader for Assetto Corsa shared memory.
 
-    Maps:
-      - acpmf_physics
-      - acpmf_graphics
-      - acpmf_static
+    Maps (tries Evo names first, falls back to classic AC1/ACC names):
+      - acevo_pmf_physics / acpmf_physics
+      - acevo_pmf_graphics / acpmf_graphics
+      - acevo_pmf_static / acpmf_static
     """
 
-    PHYSICS_TAG = "acpmf_physics"
-    GRAPHICS_TAG = "acpmf_graphics"
-    STATIC_TAG = "acpmf_static"
+    PHYSICS_TAGS = ("acevo_pmf_physics", "acpmf_physics")
+    GRAPHICS_TAGS = ("acevo_pmf_graphics", "acpmf_graphics")
+    STATIC_TAGS = ("acevo_pmf_static", "acpmf_static")
 
     def __init__(self):
         self._physics_map = None
@@ -268,9 +268,9 @@ class AssettoCorsaSharedMemory:
         if self._opened:
             return
 
-        self._physics_map = self._open_named_map(self.PHYSICS_TAG, ctypes.sizeof(SPageFilePhysics))
-        self._graphics_map = self._open_named_map(self.GRAPHICS_TAG, ctypes.sizeof(SPageFileGraphic))
-        self._static_map = self._open_named_map(self.STATIC_TAG, ctypes.sizeof(SPageFileStatic))
+        self._physics_map = self._open_named_map_any(self.PHYSICS_TAGS, ctypes.sizeof(SPageFilePhysics))
+        self._graphics_map = self._open_named_map_any(self.GRAPHICS_TAGS, ctypes.sizeof(SPageFileGraphic))
+        self._static_map = self._open_named_map_any(self.STATIC_TAGS, ctypes.sizeof(SPageFileStatic))
         self._opened = True
 
     def close(self):
@@ -487,7 +487,34 @@ class AssettoCorsaSharedMemory:
         }
 
     @staticmethod
+    def _open_named_map_any(tagnames, size: int) -> mmap.mmap:
+        errors = []
+        for tagname in tagnames:
+            try:
+                return AssettoCorsaSharedMemory._open_named_map(tagname, size)
+            except Exception as e:
+                errors.append(str(e))
+
+        raise RuntimeError(
+            f"Could not open Assetto Corsa shared memory under any of {list(tagnames)}. "
+            f"Is the game running with shared memory enabled? Errors: {errors}"
+        )
+
+    @staticmethod
     def _open_named_map(tagname: str, size: int) -> mmap.mmap:
+        # mmap.mmap(-1, ...) on Windows calls CreateFileMappingW(INVALID_HANDLE_VALUE, ...),
+        # which silently CREATES a new zero-filled mapping if one with this name doesn't
+        # already exist. We must confirm the mapping already exists (i.e. the game is
+        # actually writing it) via OpenFileMappingW first, which fails if it's absent.
+        FILE_MAP_READ = 0x0004
+        handle = ctypes.windll.kernel32.OpenFileMappingW(FILE_MAP_READ, False, tagname)
+        if not handle:
+            raise RuntimeError(
+                f"Could not open Assetto Corsa shared memory '{tagname}'. "
+                f"Is the game running with shared memory enabled?"
+            )
+        ctypes.windll.kernel32.CloseHandle(handle)
+
         try:
             return mmap.mmap(-1, size, tagname=tagname, access=mmap.ACCESS_READ)
         except Exception as e:

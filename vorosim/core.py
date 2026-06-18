@@ -20,6 +20,7 @@ from PyQt6.QtWidgets import (
     QFileDialog,
 )
 
+
 from vorosim.utils.widgets.console.core import ConsoleWidget
 from vorosim.utils.widgets.plot.qtchart.core import PlotWidget
 from vorosim.utils.win_mmap.provider.core import WinMmapProvider
