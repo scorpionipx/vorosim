@@ -1,6 +1,6 @@
 {
   "version": "0.0.1",
-  "window_geometry_b64": "AdnQywADAAAAAACiAAAAjAAACEsAAASyAAAAogAAAKsAAAhLAAAEsgAAAAAAAAAADXAAAACiAAAAqwAACEsAAASy",
+  "window_geometry_b64": "AdnQywADAAD///+4AAAAmwAAB2EAAATB////uAAAALoAAAdhAAAEwQAAAAAAAAAADXD///+4AAAAugAAB2EAAATB",
   "selected_target": "Assetto Corsa Shared Memory",
   "plots": {
     "top": {
@@ -32,11 +32,6 @@
           "visible": false
         },
         {
-          "name": "physics.steerAngle",
-          "color": "#ff20da",
-          "visible": true
-        },
-        {
           "name": "physics.heading",
           "color": "#ff9326",
           "visible": false
@@ -45,7 +40,43 @@
     },
     "bottom": {
       "title": "Graph 2",
-      "signals": []
+      "signals": [
+        {
+          "name": "physics.brake",
+          "color": "#ff0004",
+          "visible": true
+        },
+        {
+          "name": "physics.gas",
+          "color": "#22ff00",
+          "visible": true
+        },
+        {
+          "name": "physics.brakePressure[0]",
+          "color": "#0707ff",
+          "visible": true
+        },
+        {
+          "name": "physics.brakePressure[1]",
+          "color": "#06e6ff",
+          "visible": true
+        },
+        {
+          "name": "physics.brakePressure[2]",
+          "color": "#36332c",
+          "visible": true
+        },
+        {
+          "name": "physics.brakePressure[3]",
+          "color": "#171916",
+          "visible": true
+        },
+        {
+          "name": "physics.steerAngle",
+          "color": "#eb0bff",
+          "visible": true
+        }
+      ]
     }
   }
 }
