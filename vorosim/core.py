@@ -25,6 +25,7 @@ from vorosim.utils.widgets.console.core import ConsoleWidget
 from vorosim.utils.widgets.plot.qtchart.core import PlotWidget
 from vorosim.utils.win_mmap.provider.core import WinMmapProvider
 from vorosim.utils.widgets.signal_picker.core import SignalPickerDialog
+from vorosim.utils.widgets.remote.core import RemoteWidget, DEFAULT_REMOTE_PORT
 from vorosim.utils.telemetry.worker import TelemetryWorker
 
 from vorosim.version import __version__
@@ -116,6 +117,10 @@ class VoroSimMainWindow(QMainWindow):
             else:
                 self._log(f"[System] Target '{target}' not found in dropdown. Keeping current.")
 
+        remote_port = cfg.get("remote_port")
+        if isinstance(remote_port, int) and not self.remote_widget.is_connected():
+            self.remote_widget.port_edit.setText(str(remote_port))
+
         plots_cfg = cfg.get("plots", {})
         self.plot_top.import_config(plots_cfg.get("top", {}))
         self.plot_bottom.import_config(plots_cfg.get("bottom", {}))
@@ -204,6 +209,11 @@ class VoroSimMainWindow(QMainWindow):
         right_layout = QVBoxLayout(right)
         right_layout.setContentsMargins(0, 0, 0, 0)
         right_layout.setSpacing(10)
+
+        self.remote_widget = RemoteWidget(port=DEFAULT_REMOTE_PORT)
+        self.remote_widget.log.connect(self._log)
+        self.remote_widget.signal_name_provider = self._collect_udp_signals
+        right_layout.addWidget(self.remote_widget, 0)
 
         self.console_a = ConsoleWidget("Console 1")
         self.console_b = ConsoleWidget("Console 2")
@@ -364,6 +374,7 @@ class VoroSimMainWindow(QMainWindow):
         x = float(t)
         self.plot_top.tick(sample, x)
         self.plot_bottom.tick(sample, x)
+        self._stream_udp(sample)
 
     def _tick_emulator(self):
         if self.provider is None or not self.provider.is_connected():
@@ -379,6 +390,19 @@ class VoroSimMainWindow(QMainWindow):
         x = float(counter)
         self.plot_top.tick(frame, x)
         self.plot_bottom.tick(frame, x)
+        self._stream_udp(frame)
+
+    def _stream_udp(self, frame: dict):
+        """Send the raw values of the UDP-selected signals on every plot update.
+        No-op unless connected and 'Enable sending' is on (handled by the widget).
+        """
+        if not self.remote_widget.is_connected():
+            return
+        names = self._collect_udp_signals()
+        if not names:
+            return
+        values = [float(frame.get(n, 0.0)) for n in names]
+        self.remote_widget.send_values(values)
 
     def _log(self, msg: str, level: int = logging.INFO):
         logging.log(level, msg)
@@ -388,6 +412,19 @@ class VoroSimMainWindow(QMainWindow):
         ui_msg = f"[{ts}] [{level_name}] {msg}"
 
         self.console_a.append_line(ui_msg)
+
+    def _collect_udp_signals(self) -> list[str]:
+        """Names of signals flagged for UDP streaming across both plots, in
+        order and de-duplicated. Used by the remote widget's signal-list message.
+        """
+        names: list[str] = []
+        for plot in (self.plot_top, self.plot_bottom):
+            getter = getattr(plot, "udp_signal_names", None)
+            if callable(getter):
+                for name in getter():
+                    if name not in names:
+                        names.append(name)
+        return names
 
     def _on_target_changed(self, idx: int):
         name = self.target_combo.currentText()
@@ -474,6 +511,7 @@ class VoroSimMainWindow(QMainWindow):
     def save_configuration(self):
         cfg = {
             "version": __version__,
+            "remote_port": self.remote_widget.port(),
             "window_geometry_b64": base64.b64encode(self.saveGeometry()).decode("ascii"),
             "selected_target": self.target_combo.currentText(),
             "plots": {
@@ -513,6 +551,10 @@ class VoroSimMainWindow(QMainWindow):
     def closeEvent(self, event):
         try:
             self.stop_stream()
+        except Exception:
+            pass
+        try:
+            self.remote_widget.disconnect_remote()
         except Exception:
             pass
         super().closeEvent(event)

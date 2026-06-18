@@ -7,7 +7,7 @@ from PyQt6.QtCore import Qt, pyqtSignal, QPointF
 from PyQt6.QtGui import QColor, QPen, QPainter
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QScrollArea,
-    QSizePolicy, QColorDialog
+    QSizePolicy, QColorDialog, QCheckBox
 )
 
 from PyQt6.QtCharts import QChart, QChartView, QLineSeries, QValueAxis
@@ -21,6 +21,7 @@ class SignalTrack:
     y: list[float]
     color: QColor
     visible: bool = True
+    send_udp: bool = False
     min_val: float | None = None
     max_val: float | None = None
 
@@ -29,6 +30,7 @@ class SignalRow(QWidget):
     color_clicked = pyqtSignal()
     remove_clicked = pyqtSignal()
     visibility_toggled = pyqtSignal(bool)
+    send_udp_toggled = pyqtSignal(bool)
 
     def __init__(self, signal_name: str, color: QColor, parent=None):
         super().__init__(parent)
@@ -43,6 +45,10 @@ class SignalRow(QWidget):
         self.lbl.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         self.lbl_stats = QLabel("min: —   max: —")
         self.lbl_stats.setStyleSheet("font-size: 10px; color: #888;")
+
+        self.chk_send = QCheckBox()
+        self.chk_send.setFixedWidth(20)
+        self.chk_send.setToolTip("Send this signal over UDP")
 
         self.btn_eye = QPushButton("👁")
         self.btn_eye.setFixedSize(26, 22)
@@ -66,12 +72,20 @@ class SignalRow(QWidget):
 
         lay.addWidget(self.btn_color)
         lay.addLayout(text_layout, 1)
+        lay.addWidget(self.chk_send)
         lay.addWidget(self.btn_eye)
         lay.addWidget(self.btn_remove)
 
         self.btn_color.clicked.connect(self.color_clicked.emit)
         self.btn_remove.clicked.connect(self.remove_clicked.emit)
         self.btn_eye.toggled.connect(self.visibility_toggled.emit)
+        self.chk_send.toggled.connect(self.send_udp_toggled.emit)
+
+    def set_send_udp(self, checked: bool):
+        """Set the send-over-UDP checkbox without emitting (for config load)."""
+        self.chk_send.blockSignals(True)
+        self.chk_send.setChecked(checked)
+        self.chk_send.blockSignals(False)
 
     def set_stats(self, vmin: float | None, vmax: float | None):
         if vmin is None or vmax is None:
@@ -152,7 +166,7 @@ class PlotWidget(QWidget):
         scroll.setWidget(self.rows_container)
 
         self.rail = QWidget()
-        self.rail.setFixedWidth(200)
+        self.rail.setFixedWidth(330)
         rail_layout = QVBoxLayout(self.rail)
         rail_layout.setContentsMargins(0, 0, 0, 0)
         rail_layout.setSpacing(8)
@@ -188,6 +202,7 @@ class PlotWidget(QWidget):
                 "name": name,
                 "color": tr.color.name(),
                 "visible": bool(tr.visible),
+                "send_udp": bool(tr.send_udp),
             })
         return {
             "title": self.title_label.text(),
@@ -204,9 +219,11 @@ class PlotWidget(QWidget):
 
             color_hex = s.get("color", "#ffffff")
             visible = bool(s.get("visible", True))
+            send_udp = bool(s.get("send_udp", False))
 
             self.add_signal(name, color=QColor(color_hex))
             self.set_signal_visible(name, visible)
+            self.set_signal_send_udp(name, send_udp)
 
     def add_signal(self, signal_name: str, color: Optional[QColor] = None):
         if signal_name in self._tracks:
@@ -236,6 +253,7 @@ class PlotWidget(QWidget):
         row.remove_clicked.connect(lambda sn=signal_name: self.remove_signal(sn))
         row.visibility_toggled.connect(lambda checked, sn=signal_name: self.set_signal_visible(sn, checked))
         row.color_clicked.connect(lambda sn=signal_name: self.pick_color(sn))
+        row.send_udp_toggled.connect(lambda checked, sn=signal_name: self.set_signal_send_udp(sn, checked))
 
     def remove_signal(self, signal_name: str):
         tr = self._tracks.pop(signal_name, None)
@@ -259,6 +277,19 @@ class PlotWidget(QWidget):
             return
         tr.visible = visible
         tr.series.setVisible(visible)
+
+    def set_signal_send_udp(self, signal_name: str, send_udp: bool):
+        tr = self._tracks.get(signal_name)
+        row = self._rows.get(signal_name)
+        if not tr:
+            return
+        tr.send_udp = send_udp
+        if row:
+            row.set_send_udp(send_udp)
+
+    def udp_signal_names(self) -> list[str]:
+        """Names of signals flagged to be streamed over UDP, in insertion order."""
+        return [name for name, tr in self._tracks.items() if tr.send_udp]
 
     def pick_color(self, signal_name: str):
         tr = self._tracks.get(signal_name)

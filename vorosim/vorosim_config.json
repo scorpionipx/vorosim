@@ -1,82 +1,35 @@
 {
-  "version": "0.0.1",
-  "window_geometry_b64": "AdnQywADAAD///+4AAAAmwAAB2EAAATB////uAAAALoAAAdhAAAEwQAAAAAAAAAADXD///+4AAAAugAAB2EAAATB",
+  "version": "1.0.0",
+  "remote_port": 6767,
+  "window_geometry_b64": "AdnQywADAAAAAAFlAAABCQAAB1cAAARHAAABZQAAASgAAAdXAAAERwAAAAAAAAAACgAAAAFlAAABKAAAB1cAAARH",
   "selected_target": "Assetto Corsa Shared Memory",
   "plots": {
     "top": {
       "title": "Graph 1",
       "signals": [
         {
-          "name": "physics.accG[0]",
-          "color": "#2b1010",
-          "visible": true
+          "name": "physics.localAngularVel[0]",
+          "color": "#aa0000",
+          "visible": true,
+          "send_udp": false
         },
         {
-          "name": "physics.roll",
-          "color": "#4069ff",
-          "visible": false
+          "name": "physics.localAngularVel[1]",
+          "color": "#005500",
+          "visible": true,
+          "send_udp": false
         },
         {
-          "name": "physics.accG[1]",
-          "color": "#fff713",
-          "visible": true
-        },
-        {
-          "name": "physics.accG[2]",
-          "color": "#0c79ff",
-          "visible": true
-        },
-        {
-          "name": "physics.pitch",
-          "color": "#17ff17",
-          "visible": false
-        },
-        {
-          "name": "physics.heading",
-          "color": "#ff9326",
-          "visible": false
+          "name": "physics.localAngularVel[2]",
+          "color": "#0055ff",
+          "visible": true,
+          "send_udp": false
         }
       ]
     },
     "bottom": {
       "title": "Graph 2",
-      "signals": [
-        {
-          "name": "physics.brake",
-          "color": "#ff0004",
-          "visible": true
-        },
-        {
-          "name": "physics.gas",
-          "color": "#22ff00",
-          "visible": true
-        },
-        {
-          "name": "physics.brakePressure[0]",
-          "color": "#0707ff",
-          "visible": true
-        },
-        {
-          "name": "physics.brakePressure[1]",
-          "color": "#06e6ff",
-          "visible": true
-        },
-        {
-          "name": "physics.brakePressure[2]",
-          "color": "#36332c",
-          "visible": true
-        },
-        {
-          "name": "physics.brakePressure[3]",
-          "color": "#171916",
-          "visible": true
-        },
-        {
-          "name": "physics.steerAngle",
-          "color": "#eb0bff",
-          "visible": true
-        }
-      ]
+      "signals": []
     }
   }
 }
